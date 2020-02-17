@@ -3,9 +3,9 @@
 ## Nginx 配置
 ## Nginx 变量
 
-# [Nginx 模块](Modules/ngx_http_limit_req_module.md)
+# [Nginx 模块](Modules/README.md)
 
-## ngx_http_limit_req_module
+## [ngx_http_limit_req_module](Modules/ngx_http_limit_req_module.md)
 
 # Nginx 应用
 
