@@ -1,7 +1,7 @@
 # Nginx HA
 
-***[百万并发下的Nginx优化](http://developer.51cto.com/art/201811/586741.htm?tdsourcetag=s_pcqq_aiomsg)***
-```md
+## [百万并发下的 Nginx优化](http://developer.51cto.com/art/201811/586741.htm?tdsourcetag=s_pcqq_aiomsg)
+
 百万并发下的Nginx优化
 	优化目标
 		保持并发连接数
@@ -51,4 +51,3 @@
 		专有硬件
 		集群方案
 			DNS
-```

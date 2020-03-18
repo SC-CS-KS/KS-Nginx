@@ -1,17 +1,46 @@
-# Nginx
-## 工作模式
-```md
-	单工作进程模式（默认）
-		除主进程外，还有一个工作进程，且工作进程是单线程的
-	多工作进程模式
-		每个工作进程包含多工作线程
-```
-## [Config](config/README.md)
-## [Nginx Variables](variables/README.md)
-## [Modules](https://www.nginx.com/resources/wiki/modules/)
+# ngx_http_limit_req_module
+	请求限流模块
+		用来对某个 KEY 对应的 请求的平均速率 进行限流
+	
+		漏桶算法
+			
+				有一个固定容量的漏桶，按照常量固定速率流出水滴
+				如果桶是空的，则不会流出水滴
+				流入到漏桶的水流速度是随意的
+				如果流入的水超出了桶的容量，则流入的水会溢出（被丢弃）
+			核心
+				缓存请求、匀速处理、多余的请求直接丢弃
+			
+				
+			
+				漏桶算法天生就限制了请求的速度
+				可以用于流量整形和限流控制
+		令牌桶算法
+			
+				令牌桶是一个存放固定容量令牌的桶
+					按照固定速率r往桶里添加令牌
+				桶中最多存放b个令牌，当桶满时，新添加的令牌被丢弃
+			
+				当一个请求达到时，会尝试从桶中获取令牌
+					如果有，则继续处理请求
+					如果没有则排队等待或者直接丢弃
+			
+				
+		令牌桶 vs 漏桶
+			令牌桶限制的是 平均流入速率
+				允许突发请求，并允许一定程度 突发流量
+			漏桶限制的是 常量流出速率
+				从而平滑 突发流入速率
+			
+				漏桶算法的流出速率恒定或者为0
+					令牌桶算法的流出速率却有可能大于r
+	
+		平滑模式（delay）
+		允许突发模式 (nodelay)
+
+
 * [ngx_http_limit_req_module](modules/ngx_http_limit_req_module.md)
-```md
-	模块的类型
+模块的类型
 		event module
 			搭建 独立于操作系统的事件处理机制的框架，以及 提供各种具体事件的处理。
 				包括ngx_events_module,ngx_event_core_module,ngx_epoll_module等
@@ -115,54 +144,3 @@
 							过滤模块 1 ... n
 								响应客户
 
-```
-
-## nginx事件处理
-```md
-		nginx需要将所有关心的fd注册到epoll
-		static ngx_int_t ngx_epoll_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags);
-	ngx_event_t
-		结构体指针，代表关心的一个读或者写事件
-		nginx为事件可能会设置一个超时定时器，从而能够处理事件超时情况
-		struct ngx_event_s {
-    ngx_event_handler_pt  handler; //函数指针：事件的处理函数
-    ngx_rbtree_node_t   timer;     //超时定时器，存储在红黑树中（节点的key即为事件的超时时间）
-    unsigned         timedout:1;   //记录事件是否超时
-};
-	epoll_wait
-		监听所有fd，处理发生的读写事件
-		epoll_wait是阻塞调用
-			最后一个参数timeout是超时时间，即最多阻塞timeout时间如果还是没有事件发生，方法会返回
-	timeout
-		从上面说的记录超时定时器的红黑树中查找最近要到时的节点
-		以此作为epoll_wait的超时时间
-			ngx_msec_t ngx_event_find_timer(void)
-{
-    node = ngx_rbtree_min(root, sentinel);
-    timer = (ngx_msec_int_t) (node->key - ngx_current_msec);
- 
-    return (ngx_msec_t) (timer > 0 ? timer : 0);
-}
-		同时nginx在每次循环的最后
-			会从红黑树中查看是否有事件已经过期
-			如果过期，标记timeout=1，并调用事件的handler
-			void ngx_event_expire_timers(void)
-{
-    for ( ;; ) {
-        node = ngx_rbtree_min(root, sentinel);
- 
-        if ((ngx_msec_int_t) (node->key - ngx_current_msec) <= 0) {  //当前事件已经超时
-            ev = (ngx_event_t *) ((char *) node - offsetof(ngx_event_t, timer));
- 
-            ev->timedout = 1;
- 
-            ev->handler(ev);
- 
-            continue;
-        }
- 
-        break;
-    }
-}
-	nginx就是通过上面的方法实现了socket事件的处理，定时事件的处理
-```
