@@ -1,4 +1,5 @@
 ## 静态
+
 动静分离
 ```nginx
 location ~ .(jsp|do)$ {  

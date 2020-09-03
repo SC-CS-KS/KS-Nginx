@@ -1,4 +1,5 @@
 # 文件服务器
+
 ```nginx
     location / {
         autoindex on;             #开启索引功能
